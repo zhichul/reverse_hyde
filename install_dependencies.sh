@@ -10,9 +10,9 @@ fi
 
 # params
 proj_root=$(pwd)
-install_verl=0
-install_yourbench=0
-install_doccot=0
+install_verl=1
+install_yourbench=1
+install_doccot=1
 install_uda=1
 
 # push some environment variables
