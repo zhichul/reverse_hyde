@@ -1,0 +1,22 @@
+hf_configuration:
+  hf_dataset_name: 0718_yourbench_five_papers # change this to your desired dataset name
+  private: false # change this to true if you want to make the dataset private. it's true by default.
+
+model_list:
+  - model_name: meta-llama/Llama-3.3-70B-Instruct
+    base_url: http://localhost:8001/v1
+    api_key: EMPTY
+    max_concurrent_requests: 128
+
+pipeline:
+  ingestion:
+    source_documents_dir: data/five_papers/raw
+    output_dir: data/five_papers/processed
+  upload_ingest_to_hub:
+  summarization:
+    max_tokens: 122880
+  chunking:
+  single_shot_question_generation:
+  multi_hop_question_generation:
+  lighteval:
+  citation_score_filtering:
