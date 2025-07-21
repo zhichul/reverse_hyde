@@ -10,6 +10,7 @@ fi
 
 # params
 proj_root=$(pwd)
+conda_prefix=/tmp/zlu39/.conda_envs
 install_verl=1
 install_yourbench=1
 install_doccot=1
@@ -33,8 +34,8 @@ function getverl() {
     git checkout d3ec4a2e6b1482ed27e4cde9b005b5b8c661931b
 
     # make conda env
-    conda create --prefix /tmp/zlu39/.conda_envs/verl_v0.4.0 python==3.10 -y
-    conda activate /tmp/zlu39/.conda_envs/verl_v0.4.0
+    conda create --prefix ${conda_prefix}/verl_v0.4.0 python==3.10 -y
+    conda activate ${conda_prefix}/verl_v0.4.0
     export USE_MEGATRON=0 
     bash scripts/install_vllm_sglang_mcore.sh
     pip install --no-deps -e .
@@ -55,8 +56,8 @@ function getyourbench() {
     git checkout dd62da907df1b310989d9f77b60c4dced72f18bc
 
     # make conda env
-    conda create --prefix /tmp/zlu39/.conda_envs/yourbench_v0.3.1 python==3.12 -y
-    conda activate /tmp/zlu39/.conda_envs/yourbench_v0.3.1
+    conda create --prefix ${conda_prefix}/yourbench_v0.3.1 python==3.12 -y
+    conda activate ${conda_prefix}/yourbench_v0.3.1
     pip install -e .
 
     # cleanup
@@ -76,8 +77,8 @@ function getdoccot() {
     # git checkout 
     
     # make conda env
-    conda create --prefix /tmp/zlu39/.conda_envs/doc_cot python==3.10 -y
-    conda activate /tmp/zlu39/.conda_envs/doc_cot
+    conda create --prefix ${conda_prefix}/doc_cot python==3.10 -y
+    conda activate ${conda_prefix}/doc_cot
     pip3 install -r requirements.txt
     
     # get artifacts
@@ -105,8 +106,8 @@ function getuda() {
     git checkout fca5237ac316e776d8dbccffa55ca29c0efdc185
 
     # make conda env
-    conda create --prefix /tmp/zlu39/.conda_envs/UDA-benchmark python==3.10 -y
-    conda activate /tmp/zlu39/.conda_envs/UDA-benchmark
+    conda create --prefix ${conda_prefix}/UDA-benchmark python==3.10 -y
+    conda activate ${conda_prefix}/UDA-benchmark
     pip install -r requirements.txt
 
     # cleanup
