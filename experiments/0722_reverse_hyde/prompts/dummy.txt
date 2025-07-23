@@ -1,0 +1,17 @@
+Title: {title}
+
+Abstrct: {abstract}
+
+Please write a list of interesting statements or ideas from the paper as a json list. 
+
+## Format
+Stick exactly to the following format.
+```json
+{{
+    "interesting_ideas": [
+        "idea 1",
+        "idea 2",
+        ...   
+    ]
+}}
+```

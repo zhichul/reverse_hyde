@@ -1,0 +1,8 @@
+torch
+transformers
+datasets==4.0.0
+gritlm
+fastapi
+uvicorn
+openai
+faiss-cpu

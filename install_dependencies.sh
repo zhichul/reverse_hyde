@@ -10,11 +10,12 @@ fi
 
 # params
 proj_root=$(pwd)
-conda_prefix=/tmp/zlu39/.conda_envs
-install_verl=1
-install_yourbench=1
-install_doccot=1
-install_uda=1
+conda_prefix=$PSCRATCH/.conda_envs/reverse_hyde
+install_verl=0
+install_yourbench=0
+install_doccot=0
+install_uda=0
+install_litsearch=1
 
 # push some environment variables
 echo "ROOT=$(pwd)" > .env
@@ -115,6 +116,28 @@ function getuda() {
     conda deactivate
 }
 
+################## get UDA ####################
+function getlitsearch() {
+    # get github repo
+    if [ -e "lib/LitSearch" ]; then
+        echo "LitSearch already downloaded, skipping clone."
+    else
+        git clone https://github.com/princeton-nlp/LitSearch.git lib/LitSearch
+    fi
+    cd lib/LitSearch
+    git checkout 42107c06b0ed0ed02ff7836ec285d3df2f0e5b09
+
+    # make conda env
+    conda create --prefix ${conda_prefix}/LitSearch python==3.10 -y
+    conda activate ${conda_prefix}/LitSearch
+    pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+    pip install numpy==1.23.5 transformers==4.37.2 datasets==4.0.0  sentence-transformers==2.2.2 InstructorEmbedding==1.0.1 rank-bm25==0.2.2 gritlm==1.0.0 openai==1.33.0
+
+    # cleanup
+    cd $proj_root
+    conda deactivate
+}
+
 ################## Main Pipeline ####################
 if [ "$install_verl" -eq 1 ]; then
     getverl
@@ -128,7 +151,11 @@ fi
 if [ "$install_uda" -eq 1 ]; then
     getuda
 fi
+if [ "$install_litsearch" -eq 1 ]; then
+    getlitsearch
+fi
 
 # ################### get data and model ####################
-# huggingface-cli download --repo-type dataset akariasai/PopQA
-# huggingface-cli download meta-llama/Llama-3.1-8B-Instruct
+conda activate ${conda_prefix}/UDA-benchmark
+huggingface-cli download GritLM/GritLM-7B
+huggingface-cli download princeton-nlp/LitSearch --repo-type dataset

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Prompt‑HyDE playground</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:0;padding:1rem 2rem;}
+  h2{margin-top:2rem;}
+  label{display:block;margin-top:.75rem;font-weight:600;}
+  select,input[type=text],input[type=number],textarea{width:100%;padding:.4rem;}
+  textarea{height:120px;font-family:monospace;}
+  button{margin-top:1rem;padding:.5rem 1rem;cursor:pointer;}
+  table{border-collapse:collapse;width:100%;margin-top:.5rem;}
+  th,td{border:1px solid #ccc;padding:.25rem .5rem;vertical-align:top;text-align:left;}
+  em.rev  {font-style:italic;color:#9146ff;}
+  strong.rel{color:#0b63ff;font-weight:700;}
+  .flex{display:flex;gap:2rem;flex-wrap:wrap;}
+  .card{flex:1 1 320px;border:1px solid #ddd;padding:1rem;}
+  .small{font-size:.9rem;color:#666;}
+  .tabs{display:flex;gap:.5rem;margin-bottom:.5rem;}
+  .tabs button{padding:.25rem .75rem;border:1px solid #aaa;background:#eee;}
+  .tabs button.active{background:white;border-bottom:none;font-weight:600;}
+  .tab-body{display:none;}
+  .tab-body.active{display:block;}
+</style>
+</head>
+<body>
+
+<h1>Prompt‑HyDE UI (vanilla JS)</h1>
+
+<!-- CONFIG --------------------------------------------------------------->
+<section class="card">
+  <h2>Server configuration</h2>
+  <pre id="cfg" class="small">loading…</pre>
+</section>
+
+<section class="flex">
+  <!-- DATA --------------------------------------------------------------->
+  <div class="card" style="max-width:440px;">
+    <h2>Data</h2>
+    <label>Query</label>
+    <select id="querySel"></select>
+    <p id="queryText" class="small"></p>
+
+    <label>Relevant document (rank + title)</label>
+    <select id="docSel"></select>
+    <p id="docTitle" class="small"></p>
+  </div>
+
+  <!-- PROMPT / LLM ------------------------------------------------------->
+  <div class="card" style="flex:2 1 520px;">
+    <h2>Prompt &amp; LLM setup</h2>
+
+    <label>Prompt</label>
+    <div style="display:flex;gap:.5rem;">
+      <select id="promptSel" style="flex:1;"></select>
+      <button id="newPromptBtn">+ New</button>
+    </div>
+
+    <label>Extractor</label>
+    <select id="extSel"></select>
+
+    <label>k (top‑k retrieval)</label>
+    <input type="number" id="kInp" value="50" min="1"/>
+
+    <label>Prompt text</label>
+    <textarea id="promptBox"></textarea>
+    <div style="display:flex;gap:.5rem;">
+      <button id="savePromptBtn">💾 Save</button>
+      <button id="reloadPromptBtn">⟳ Reload</button>
+    </div>
+
+    <details style="margin-top:.75rem;">
+      <summary><strong>LLM config</strong></summary>
+
+      <label>API key</label><input id="apiKey" type="text" placeholder="sk‑…" />
+      <label>Model</label><input id="model" type="text" value="gpt-4o-mini"/>
+      <label>Temperature</label><input id="temp" type="number" value="0" step=".1"/>
+      <label>Max tokens</label><input id="maxTok" type="number" value="2048"/>
+      <label style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;">
+        <input type="checkbox" id="wantJson" checked> Expect JSON object
+      </label>
+    </details>
+
+    <button id="runBtn" style="background:#14a44d;color:#fff;">Run</button>
+  </div>
+</section>
+
+<!-- TABLES --------------------------------------------------------------->
+<section class="flex">
+  <div class="card">
+    <h2>Before (original)</h2>
+    <table id="beforeTbl">
+      <thead><tr><th>#</th><th>Document / Title</th><th>Dist</th></tr></thead><tbody></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>After (augmented)</h2>
+    <table id="afterTbl">
+      <thead><tr><th>#</th><th>Document / Title</th><th>Dist</th></tr></thead><tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- METRICS -------------------------------------------------------------->
+<section class="card" id="metricsCard" style="display:none;">
+  <h2>Metrics</h2>
+  <div id="recallLine" class="small"></div>
+
+  <div class="tabs">
+    <button id="tab1" class="active">Δ recall</button>
+    <button id="tab2">Rank maps</button>
+  </div>
+
+  <div id="body1" class="tab-body active">
+    <p id="deltaLine" class="small"></p>
+  </div>
+  <div id="body2" class="tab-body">
+    <h3 class="small" style="margin-top:0;">ranks_before</h3>
+    <pre id="rb" class="small"></pre>
+    <h3 class="small">ranks_after</h3>
+    <pre id="ra" class="small"></pre>
+  </div>
+</section>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+let idField="id", relField="relevant_documents";
+let uiDefaults={}, queries=[], docCache={}, currentRelIds=new Set();
+
+async function j(url,opt){const r=await fetch(url,opt);if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):"";}
+async function getDoc(id){id=String(id);if(docCache[id])return docCache[id];return docCache[id]=await j(`/doc/${id}`);}
+
+/* ---------- bootstrap ---------- */
+(async()=>{
+  const cfg=await j("/config");
+  uiDefaults=await j("/ui_config").catch(()=>({}));
+  $("cfg").textContent=JSON.stringify(cfg,null,2);
+  idField=cfg.id_field; relField=cfg.relevant_documents_field||relField;
+
+  $("kInp").value=uiDefaults.k??50;
+  $("model").value=uiDefaults.llm?.model??"gpt-4o-mini";
+  $("temp").value=uiDefaults.llm?.temperature??0;
+  $("maxTok").value=uiDefaults.llm?.max_completion_tokens??2048;
+  $("apiKey").value=uiDefaults.llm?.api_key??"";
+  $("wantJson").checked=(uiDefaults.llm?.response_format??"json_object")==="json_object";
+
+  await loadPromptList(); await loadExtractorList();
+
+  queries=await j("/queries");
+  queries.forEach(q=>$("querySel").add(new Option(`${q.idx}: ${q.query.slice(0,60)}…`,q.idx)));
+
+  $("querySel").onchange=()=>refreshBefore(true);
+  $("docSel").onchange=docChange;
+  $("kInp").onchange=()=>refreshBefore(false);
+
+  $("querySel").value=uiDefaults.default_query_idx??0;
+  await refreshBefore(true).then(()=>{$("docSel").value=uiDefaults.default_doc_idx??0;docChange();});
+})().catch(alert);
+
+/* ---------- list loaders ---------- */
+async function loadPromptList(){const xs=await j("/prompts");$("promptSel").innerHTML="";xs.forEach(n=>$("promptSel").add(new Option(n,n)));$("promptSel").onchange=loadPromptText;$("promptSel").selectedIndex=0;await loadPromptText();}
+async function loadPromptText(){$("promptBox").value=await fetch(`/prompt/${$("promptSel").value}`).then(r=>r.text());}
+async function loadExtractorList(){const xs=await j("/extractors");$("extSel").innerHTML="";xs.forEach(n=>$("extSel").add(new Option(n,n)));}
+
+/* ---------- minor UI ---------- */
+function docChange(){ $("docTitle").textContent=$("docSel").selectedOptions[0]?.textContent||""; }
+
+/* ---------- refresh before ---------- */
+async function refreshBefore(rebuild){
+  const qIdx=+$("querySel").value, k=+$("kInp").value;
+  $("queryText").textContent=queries[qIdx]?.query||"(loading…)";
+
+  if(rebuild){
+    const relIdsArr=(await j(`/query/${qIdx}`))[relField].map(String);
+    currentRelIds=new Set(relIdsArr);
+    $("docSel").innerHTML="";
+    $("afterTbl").querySelector("tbody").innerHTML="";            /* clear AFTER table */
+  }
+
+  const res=await j("/retrieve",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({query_idx:qIdx,k})});
+  renderTbl("beforeTbl",res.docs_before,res.hits_before);
+
+  const relIds=[...currentRelIds];
+  for(let i=0;i<relIds.length;i++){
+    const id=relIds[i], rk=res.ranks_before[id]??Infinity, rankLabel=(!Number.isFinite(rk)||rk>1e8)?"∞":rk;
+    let title=res.docs_before.find(d=>String(d[idField])===id)?.title;
+    if(!title){try{title=(await getDoc(id)).title;}catch{title="(no title)";}}
+    if(rebuild){
+      const opt=new Option(`${i}: rank=${rankLabel}  ${title}`,i);opt.dataset.id=id;$("docSel").add(opt);
+    }else{
+      const opt=$("docSel").options[i];opt.textContent=`${i}: rank=${rankLabel}  ${title}`;opt.dataset.id=id;
+    }
+  }
+
+  updateRecallCard(res.recall_before);
+  $("deltaLine").textContent="";
+  $("rb").textContent=JSON.stringify(res.ranks_before,null,2);
+  $("ra").textContent="";
+  docChange();
+}
+
+/* ---------- run prompt ---------- */
+$("runBtn").onclick=async()=>{
+  try{$("runBtn").disabled=true;
+    const payload={query_idx:+$("querySel").value,doc_idx:+$("docSel").value,prompt_name:$("promptSel").value,
+      extractor_name:$("extSel").value,k:+$("kInp").value,
+      llm_cfg:{api_key:$("apiKey").value,model:$("model").value,temperature:+$("temp").value,
+      response_format:$("wantJson").checked?{type:"json_object"}:null,max_completion_tokens:+$("maxTok").value}};
+    const res=await j("/prompt/run",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    renderTbl("afterTbl",res.docs_after,res.hits_after);
+    $("ra").textContent=JSON.stringify(res.ranks_after,null,2);
+    updateRecallCard(res.recall_before,res.recall_after);
+
+    const deltaLines=Object.keys(res.recall_before).sort((a,b)=>+a-+b).map(k=>{
+      const diff=((res.recall_after[k]-res.recall_before[k])*100).toFixed(1);
+      const sign=diff>0?"+":"";
+      return `@${k}: ${sign}${diff} %`;
+    }).join("   ");
+    $("deltaLine").textContent=deltaLines;
+  }catch(e){alert(e.message);}finally{$("runBtn").disabled=false;}
+};
+
+/* ---------- table renderer ---------- */
+function renderTbl(tblId, rows, hits){
+  const tb=$(`${tblId}`).querySelector("tbody");
+  tb.innerHTML=rows.map((d,i)=>{
+    const id=String(d.corpusid??d[idField]);
+    let start="",end="";
+    if(d.reverse_hyde){start='<em class="rev">';end='</em>';}
+    else if(currentRelIds.has(id)){start='<strong class="rel">';end='</strong>';}
+    const title=d.title||"(no title)";
+    const dist=hits&&hits[i]?hits[i][1].toFixed(3):"";
+    return `<tr><td>${i+1}</td><td>${start}${title}${end}</td><td>${dist}</td></tr>`;
+  }).join("");
+}
+
+/* ---------- recall card ---------- */
+function updateRecallCard(before,after=null){
+  const keys=Object.keys(before).sort((a,b)=>+a-+b);
+  const parts=keys.map(k=>{
+    return after?`@${k}: ${(before[k]*100).toFixed(1)} % → ${(after[k]*100).toFixed(1)} %`
+                :`@${k}: ${(before[k]*100).toFixed(1)} %`;
+  });
+  $("recallLine").textContent="Recall "+parts.join("   ");
+  $("metricsCard").style.display="";
+}
+
+/* ---------- tabs ---------- */
+["tab1","tab2"].forEach(id=>{$(id).onclick=()=>{["tab1","tab2"].forEach(x=>$(x).classList.toggle("active",x===id));
+  ["body1","body2"].forEach((b,i)=>$(b).classList.toggle("active",(id==="tab1")===!i));};});
+
+/* ---------- CRUD ---------- */
+$("newPromptBtn").onclick=()=>{const n=prompt("New prompt name");if(n){$("promptSel").add(new Option(n,n,true,true));$("promptBox").value="";}};
+$("savePromptBtn").onclick=async()=>{await fetch(`/prompt/${$("promptSel").value}`,{method:"PUT",headers:{'Content-Type':'text/plain'},body:$("promptBox").value});alert("Saved");};
+$("reloadPromptBtn").onclick=loadPromptText;
+</script>
+</body>
+</html>
