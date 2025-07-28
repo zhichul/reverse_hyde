@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 import glob
+import html
 import json
 import math
 from pathlib import Path
@@ -10,8 +11,10 @@ from typing import Dict, Any, List
 from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 import yaml
+from datetime import datetime, timezone
+import base64, json, os
 
 from .config import Settings
 from .data import QuerySet, Corpus
@@ -28,10 +31,25 @@ def _settings_to_json(cfg: Settings) -> Dict[str, Any]:
     """Convert dataclass → JSON‑serialisable dict (Paths → str)."""
     return {k: str(v) if isinstance(v, Path) else v for k, v in asdict(cfg).items()}
 
+def _build_annotation_index(base_dir: Path) -> None:
+    rows = []
+    for p in base_dir.rglob("*"):
+        if p.suffix.lower() not in {".html", ".txt", ".json"} or not p.is_file():
+            continue
+        rel = p.relative_to(base_dir).as_posix()
+        rows.append(f"<li><a href=\"/annotations/{rel}\">{html.escape(rel)}</a></li>")
+    rows.sort()
 
-# --------------------------------------------------------------------------- #
-# app factory
-# --------------------------------------------------------------------------- #
+    (base_dir / "index.html").write_text(
+        "<!doctype html><meta charset='utf-8'>"
+        "<h1>Saved annotations</h1>"
+        "<button onclick=\"fetch('/annotation/reindex',"
+        "{method:'POST'}).then(()=>location.reload())\">🔄 Refresh index</button>"
+        "<ul>" + "\n".join(rows) + "</ul>",
+        encoding="utf-8"
+    )
+
+
 def make_app(cfg: Settings) -> FastAPI:
     app     = FastAPI(title="Prompt‑HyDE")
     queries = QuerySet(cfg.query_dataset)
@@ -40,10 +58,9 @@ def make_app(cfg: Settings) -> FastAPI:
     retr    = Retriever(cfg.backend, cfg.index_path, embed)
     prompt_glob     = str(cfg.prompt_dir / "*.txt")
     extractor_glob  = str(cfg.extractor_dir / "*.py")
+    _build_annotation_index(cfg.annotation_dir)
 
-    # ------------------------------------------------------------------ #
-    # routes
-    # ------------------------------------------------------------------ #
+
     @app.get("/doc/{doc_id}", tags=["data"])
     def get_document(doc_id: int):
         """
@@ -63,7 +80,7 @@ def make_app(cfg: Settings) -> FastAPI:
         without 100 separate /query/{i} calls.
         """
         return [
-            {"idx": i, "query": q} for i, q in enumerate(queries.get_all())
+            {"idx": i, **q} for i, q in enumerate(queries.get_all())
         ]
 
     def run_retrieval_only(q_obj: dict, k: int, *, rel_field: str, id_field: str):
@@ -116,6 +133,49 @@ def make_app(cfg: Settings) -> FastAPI:
 
         }
 
+    @app.post("/annotation/reindex", tags=["save_annotations"])
+    async def rebuild_index():
+        _build_annotation_index(cfg.annotation_dir)
+        return {"ok": True}
+
+
+
+    @app.post("/annotation/save", tags=["save_annotations"])
+    async def save_annotation(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Saves three sibling files:
+        annotations/q{Q}_d{D}/{TIMESTAMP}.html / .txt / .json
+        and (re)builds annotations/index.html with links to every snapshot.
+        """
+        try:
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+            q   = payload["query_idx"]
+            d   = payload["doc_idx"]
+
+            # ---------- write individual files ----------
+            stem_dir: Path = cfg.annotation_dir / f"q{q}_d{d}"
+            stem_dir.mkdir(parents=True, exist_ok=True)
+            stem = stem_dir / ts
+
+            # HTML snapshot
+            html_bytes = base64.b64decode(payload["html"])
+            html_path  = stem.with_suffix(".html")
+            html_path.write_bytes(html_bytes)
+
+            # free‑text note
+            stem.with_suffix(".txt").write_text(payload["annotation"], encoding="utf-8")
+
+            # raw JSON (strip big fields)
+            meta = {k: v for k, v in payload.items() if k not in {"html"}}
+            stem.with_suffix(".json").write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+
+            _build_annotation_index(cfg.annotation_dir)
+
+            return {"ok": True, "path_base": str(stem)}
+        except Exception as exc:
+            # surface any filesystem/base64 errors to the client
+            raise HTTPException(500, f"Annotation save failed: {exc}") from exc
+
     @app.get("/prompts", tags=["assets"])
     def list_prompts():
         return [Path(p).stem for p in glob.glob(prompt_glob)]
@@ -125,9 +185,11 @@ def make_app(cfg: Settings) -> FastAPI:
         return [Path(p).stem for p in glob.glob(extractor_glob)]
 
     @app.put("/prompt/{name}", tags=["assets"], response_class=PlainTextResponse)
-    def save_prompt(name: str, body: str):
-        with open( cfg.prompt_dir / f"{name}.txt", 'wt') as f:
-            f.write(body)
+    async def save_prompt(
+        name: str,
+        body: str = Body(..., media_type="text/plain")
+    ):
+        (cfg.prompt_dir / f"{name}.txt").write_text(body, encoding="utf-8")
         return "OK"
 
     @app.get("/prompt/{name}", tags=["assets"], response_class=PlainTextResponse)
@@ -196,10 +258,11 @@ def make_app(cfg: Settings) -> FastAPI:
         
         # ---------------- augment ranking ------------------------------ #
         print('Running [augmentation ranking]')
+        print('Running [original ranking] subroutine')
         key_dists = []
         if rh_keys:
             key_vecs = np.vstack([embed(k) for k in rh_keys])
-            q_vec    = embed(q_obj["query"])
+            q_vec    = embed(q_obj["query"], type='query')
             key_dists = (1- np.matmul(key_vecs, q_vec)).tolist()
 
         augmented = {row: dist for row, dist in hits}
@@ -209,6 +272,7 @@ def make_app(cfg: Settings) -> FastAPI:
         augmented_hits = sorted(augmented.items(), key=lambda x: x[1])
         ranks_after = {doc_id: 9999999999 for doc_id in rel_ids}
         docs_after = []
+
         # ensure every relevant doc has an entry
         for r, (row, _) in enumerate(augmented_hits):
                 if row < 0:
@@ -251,8 +315,11 @@ def make_app(cfg: Settings) -> FastAPI:
             "hits_after": augmented_hits,
         }
 
-    # Assume your HTML lives in backend/frontend/index.html
     frontend_dir = Path(__file__).parent.parent / "frontend"
+    app.mount(
+        "/annotations",
+        StaticFiles(directory=cfg.annotation_dir, html=True),
+        name="annotations",
+    )
     app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
-
     return app

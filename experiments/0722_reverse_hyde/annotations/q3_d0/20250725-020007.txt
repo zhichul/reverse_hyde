@@ -1,0 +1,3 @@
+Only half of the top 20 is relevant. The irrelevant ones miss criterions such as "multiple", "morphological analyzer". 
+
+While the article is relevant to the query, the focus of the article is arguably not the query. The query is also broad (>5 relevant but <20 relevant).

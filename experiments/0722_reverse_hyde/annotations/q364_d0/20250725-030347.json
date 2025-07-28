@@ -1,0 +1,8 @@
+{
+  "query_idx": 364,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 100,
+  "annotation": "Query is too broad, target paper is very specific to poetry."
+}

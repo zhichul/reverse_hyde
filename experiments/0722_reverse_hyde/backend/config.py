@@ -10,6 +10,7 @@ class Settings:
     corpus_dataset: str
     prompt_dir: Path
     extractor_dir: Path
+    annotation_dir: Path
     ui_config: Path
     host: str
     port: int

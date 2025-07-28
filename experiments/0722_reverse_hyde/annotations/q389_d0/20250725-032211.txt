@@ -1,0 +1,1 @@
+Target paper don't have CTC in abstract.

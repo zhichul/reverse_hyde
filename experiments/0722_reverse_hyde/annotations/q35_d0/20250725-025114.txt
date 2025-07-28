@@ -1,0 +1,1 @@
+Query is too broad, the target paper does not do relation extraction.

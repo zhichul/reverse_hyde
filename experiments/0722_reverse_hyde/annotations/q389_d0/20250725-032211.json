@@ -1,0 +1,8 @@
+{
+  "query_idx": 389,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 100,
+  "annotation": "Target paper don't have CTC in abstract."
+}

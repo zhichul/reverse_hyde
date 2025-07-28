@@ -10,12 +10,16 @@ class GritEmbedder:
             GritEmbedder._model = GritLM(model_name, torch_dtype="auto", device_map="auto", mode='embedding')
         self.model = GritEmbedder._model
 
-    def __call__(self, text: str) -> np.ndarray:
-        return self.model.encode([text], instruction=self._instruction())[0]
+    def __call__(self, text: str, type="key") -> np.ndarray:
+        return self.model.encode([text], instruction=self._instruction(type=type))[0]
 
     @staticmethod
-    def _instruction():
-        instruction = "Given a research query, retrieve the title and abstract of the relevant research paper"
+    def _instruction(type = "key"):
+        if type == "key":
+            instruction = ""
+        else:
+            assert type == "query"
+            instruction = "Given a research query, retrieve the title and abstract of the relevant research paper"
         return "<|user|>\n" + instruction + "\n<|embed|>\n" if instruction else "<|embed|>\n"
 
 def get_embedder(name: str) -> GritEmbedder:

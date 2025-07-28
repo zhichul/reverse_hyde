@@ -1,0 +1,1 @@
+There's no mention of automatic segmentation in the abstract. Finer grained compared to what? Query is kind of underspecified.

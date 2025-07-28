@@ -1,0 +1,3 @@
+Only a few of the top 20 is considered relevant. The query is good. It looks like gritlm often dropped the requirement for contextual, and sometimes language model. 
+
+Contextual calibration is perhaps vague, what specifically is contextual about it, plus the abstract bugged out and title was really not about contextual calibration.

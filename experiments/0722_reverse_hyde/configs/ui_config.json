@@ -2,13 +2,13 @@
     "default_query_idx": 0,
     "default_doc_idx": 0,
     "k": 20,
-    "prompt_name": "dummy",
-    "extractor_name": "dummy",
+    "prompt_name": "title_abstract",
+    "extractor_name": "json_list_extractor",
     "llm": {
-      "api_key": "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",
+      "api_key": "",
       "model": "gpt-4o-mini",
       "temperature": 0,
-      "max_completion_tokens": 2048,
-      "response_format": "json_object"
+      "max_completion_tokens": 8192,
+      "response_format": null
     }
 }

@@ -1,0 +1,8 @@
+{
+  "query_idx": 30,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 20,
+  "annotation": "Query is broader than target - target is only japanese."
+}

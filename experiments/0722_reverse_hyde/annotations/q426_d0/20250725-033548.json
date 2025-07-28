@@ -1,0 +1,8 @@
+{
+  "query_idx": 426,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 100,
+  "annotation": "Abstract had parsing error.... There's no reference-based or reference free in abstract."
+}

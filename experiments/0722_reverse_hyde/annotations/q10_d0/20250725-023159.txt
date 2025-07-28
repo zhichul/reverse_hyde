@@ -1,0 +1,3 @@
+Only a few of the top 20 is relevant, it wasn't able to find much that matched the second constraint.
+
+There's no mention of temporal or topical artifacts in the abstract (though they do in the full paper). The question asks about strategies but I don't think the paper had strategies.

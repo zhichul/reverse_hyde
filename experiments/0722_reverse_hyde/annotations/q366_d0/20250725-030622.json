@@ -1,0 +1,8 @@
+{
+  "query_idx": 366,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 100,
+  "annotation": "Query is broad. The abstract was maybe too noisy (has figure one parse in it from what it looks like)."
+}

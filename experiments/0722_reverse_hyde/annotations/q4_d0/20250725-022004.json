@@ -1,0 +1,8 @@
+{
+  "query_idx": 4,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 20,
+  "annotation": "Only a few of the top 20 is considered relevant. The query is good. It looks like gritlm often dropped the requirement for contextual, and sometimes language model. \n\nContextual calibration is perhaps vague, what specifically is contextual about it, plus the abstract bugged out and title was really not about contextual calibration."
+}

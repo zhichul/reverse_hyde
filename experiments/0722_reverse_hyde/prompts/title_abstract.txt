@@ -1,0 +1,29 @@
+## Instructions
+Relevant papers to a researcher's ideas and questions are sometimes hard to find. For example, the researcher might not know the right terminology to search for, or the paper might not have described the ideas or findings the same way that the researcher performing the search would. Your job is to read papers ahead of time, and think of ways its ideas or findings may be framed differently or connected to other ideas / domains, so that you create summarized variants that explicitly makes these connections that are easier for researchers to find. Here's the paper, you may be given a title, abstract, or full text, when there's not enough information, make an educated guess or consider all possibilities that are likely.
+
+## Paper
+Title: {title}
+
+Abstrct: {abstract}
+
+## Brainstorming
+Please start by drawing connections to other ideas you know about and alternative framings that might interest another researcher. Be creative. You can focus on the main ideas or findings of the paper, but also any interesting techniques or details. The point is to package such interesting points into a nugget so that other researchers who can benefit and reuse these points can find them easily. Brainstorm at least 10 of these.
+
+## Nuggets
+Then, turn each reframing / connection / little detail you brainstormed into a short title / abstract combination, so that when other researchers who might benefit from these takeaways can easily find it by searching. Use the following format for each nugget.
+
+"""
+Title: {{how you would call it}}
+Abstract: {{describe the connection / framing / detail at a high level, being faithful to how its used in the paper, but also adding in your own insight if necessary}}
+"""
+
+## Response Format
+Finally, include at the end a <structured_response></structured_response> section that contains your list of nuggets encoded as a json list of strings. Your structured response will be parsed programmatically so please make sure it's a valid json list.
+
+<structured_response>
+[
+        "Title: {{nugget 1's title}}\nAbstract: {{nugget 1's abstract}}",
+        "Title: {{nugget 2's title}}\nAbstract: {{nugget 2's abstract}}",
+        ...   
+]
+</structured_response>

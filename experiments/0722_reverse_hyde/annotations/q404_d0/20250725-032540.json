@@ -1,0 +1,8 @@
+{
+  "query_idx": 404,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 100,
+  "annotation": "Evaluation is only a tiny part of the abstract. Generated conversations is a tail concept I think."
+}

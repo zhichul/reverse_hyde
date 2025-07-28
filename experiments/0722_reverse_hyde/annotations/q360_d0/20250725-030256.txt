@@ -1,0 +1,1 @@
+The query is kind of broad, and requires some hops of inference.

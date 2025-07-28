@@ -18,6 +18,6 @@ class Retriever:
         self.embed = embedder
 
     def search(self, text: str, k: int) -> List[Tuple[int, float]]:
-        vec = self.embed(text).astype("float32")
+        vec = self.embed(text, type='query').astype("float32")
         D, I = self.index.search(vec[None, :], k)
         return list(zip(I[0].tolist(), (1-D[0]).tolist())) # turn into cosine distance

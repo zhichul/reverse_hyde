@@ -1,0 +1,8 @@
+{
+  "query_idx": 378,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 100,
+  "annotation": "Query is vague and abstract. Similarity is not explicitly mentioned in the abstract. Abstract had a parse error."
+}

@@ -1,0 +1,8 @@
+{
+  "query_idx": 35,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 20,
+  "annotation": "Query is too broad, the target paper does not do relation extraction."
+}

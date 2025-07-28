@@ -1,7 +1,8 @@
+```html
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8">
 <title>Prompt‑HyDE playground</title>
 <style>
   body{font-family:system-ui,sans-serif;margin:0;padding:1rem 2rem;}
@@ -11,43 +12,56 @@
   textarea{height:120px;font-family:monospace;}
   button{margin-top:1rem;padding:.5rem 1rem;cursor:pointer;}
   table{border-collapse:collapse;width:100%;margin-top:.5rem;}
-  th,td{border:1px solid #ccc;padding:.25rem .5rem;vertical-align:top;text-align:left;}
-  em.rev  {font-style:italic;color:#9146ff;}
+  th,td{border:1px solid #ccc;padding:.25rem .5rem;text-align:left;vertical-align:top;}
+  em.rev{font-style:italic;color:#9146ff;}
   strong.rel{color:#0b63ff;font-weight:700;}
   .flex{display:flex;gap:2rem;flex-wrap:wrap;}
   .card{flex:1 1 320px;border:1px solid #ddd;padding:1rem;}
-  .small{font-size:.9rem;color:#666;}
+  .small{font-size:.85rem;color:#555;margin:.25rem 0;}
+
+  /* tooltip for abstracts */
+  .has-abs{position:relative;}
+  .has-abs:hover::after{
+    content:attr(data-abs);
+    position:absolute;left:0;top:100%;z-index:999;
+    max-width:420px;white-space:pre-wrap;font-size:.8rem;
+    background:#333;color:#fff;padding:.5rem;border-radius:.25rem;
+    box-shadow:0 2px 6px rgba(0,0,0,.35);
+  }
+
+  /* tab styling */
   .tabs{display:flex;gap:.5rem;margin-bottom:.5rem;}
   .tabs button{padding:.25rem .75rem;border:1px solid #aaa;background:#eee;}
-  .tabs button.active{background:white;border-bottom:none;font-weight:600;}
+  .tabs button.active{background:#fff;border-bottom:none;font-weight:600;}
   .tab-body{display:none;}
   .tab-body.active{display:block;}
 </style>
 </head>
 <body>
-
 <h1>Prompt‑HyDE UI (vanilla JS)</h1>
 
-<!-- CONFIG --------------------------------------------------------------->
+<!-- CONFIG -------------------------------------------------------------->
 <section class="card">
   <h2>Server configuration</h2>
   <pre id="cfg" class="small">loading…</pre>
 </section>
 
 <section class="flex">
-  <!-- DATA --------------------------------------------------------------->
+  <!-- DATA CARD -->
   <div class="card" style="max-width:440px;">
     <h2>Data</h2>
+
     <label>Query</label>
     <select id="querySel"></select>
-    <p id="queryText" class="small"></p>
+    <p id="queryText" class="small has-abs" data-abs=""></p>
+    <p id="queryMeta" class="small"></p>
 
     <label>Relevant document (rank + title)</label>
     <select id="docSel"></select>
-    <p id="docTitle" class="small"></p>
+    <p id="docTitle" class="small has-abs" data-abs=""></p>
   </div>
 
-  <!-- PROMPT / LLM ------------------------------------------------------->
+  <!-- PROMPT / LLM / ANNOTATION CARD -->
   <div class="card" style="flex:2 1 520px;">
     <h2>Prompt &amp; LLM setup</h2>
 
@@ -61,7 +75,7 @@
     <select id="extSel"></select>
 
     <label>k (top‑k retrieval)</label>
-    <input type="number" id="kInp" value="50" min="1"/>
+    <input id="kInp" type="number" value="50" min="1">
 
     <label>Prompt text</label>
     <textarea id="promptBox"></textarea>
@@ -72,38 +86,38 @@
 
     <details style="margin-top:.75rem;">
       <summary><strong>LLM config</strong></summary>
-
-      <label>API key</label><input id="apiKey" type="text" placeholder="sk‑…" />
-      <label>Model</label><input id="model" type="text" value="gpt-4o-mini"/>
-      <label>Temperature</label><input id="temp" type="number" value="0" step=".1"/>
-      <label>Max tokens</label><input id="maxTok" type="number" value="2048"/>
+      <label>API key</label><input id="apiKey" type="text" placeholder="sk‑…" >
+      <label>Model</label><input id="model" type="text" value="gpt-4o-mini">
+      <label>Temperature</label><input id="temp" type="number" value="0" step=".1">
+      <label>Max tokens</label><input id="maxTok" type="number" value="2048">
       <label style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;">
-        <input type="checkbox" id="wantJson" checked> Expect JSON object
+        <input id="wantJson" type="checkbox"> Expect JSON object response
       </label>
     </details>
 
-    <button id="runBtn" style="background:#14a44d;color:#fff;">Run</button>
+    <label>Your annotation</label>
+    <textarea id="noteBox" placeholder="Add notes about this run…"></textarea>
+    <div style="display:flex;gap:.5rem;">
+      <button id="saveNoteBtn" style="background:#0b63ff;color:#fff;">Save annotation</button>
+      <button id="runBtn"     style="background:#14a44d;color:#fff;">Run</button>
+    </div>
   </div>
 </section>
 
-<!-- TABLES --------------------------------------------------------------->
+<!-- BEFORE / AFTER TABLES ---------------------------------------------->
 <section class="flex">
   <div class="card">
     <h2>Before (original)</h2>
-    <table id="beforeTbl">
-      <thead><tr><th>#</th><th>Document / Title</th><th>Dist</th></tr></thead><tbody></tbody>
-    </table>
+    <table id="beforeTbl"><thead><tr><th>#</th><th>Document / Title</th><th>Dist</th></tr></thead><tbody></tbody></table>
   </div>
   <div class="card">
     <h2>After (augmented)</h2>
-    <table id="afterTbl">
-      <thead><tr><th>#</th><th>Document / Title</th><th>Dist</th></tr></thead><tbody></tbody>
-    </table>
+    <table id="afterTbl"><thead><tr><th>#</th><th>Document / Title</th><th>Dist</th></tr></thead><tbody></tbody></table>
   </div>
 </section>
 
-<!-- METRICS -------------------------------------------------------------->
-<section class="card" id="metricsCard" style="display:none;">
+<!-- METRICS ------------------------------------------------------------->
+<section id="metricsCard" class="card" style="display:none;">
   <h2>Metrics</h2>
   <div id="recallLine" class="small"></div>
 
@@ -124,137 +138,157 @@
 </section>
 
 <script>
-/* ---------- helpers ---------- */
+/* ---------- helpers & globals ---------- */
 const $ = id => document.getElementById(id);
 let idField="id", relField="relevant_documents";
-let uiDefaults={}, queries=[], docCache={}, currentRelIds=new Set();
-
-async function j(url,opt){const r=await fetch(url,opt);if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):"";}
-async function getDoc(id){id=String(id);if(docCache[id])return docCache[id];return docCache[id]=await j(`/doc/${id}`);}
+let queries=[], currentRelIds=new Set();
+const fetchJSON = (u,o)=>fetch(u,o).then(r=>r.ok?r.json():Promise.reject(r.statusText));
 
 /* ---------- bootstrap ---------- */
 (async()=>{
-  const cfg=await j("/config");
-  uiDefaults=await j("/ui_config").catch(()=>({}));
+  const cfg=await fetchJSON("/config");
+  const ui=await fetchJSON("/ui_config").catch(()=>({}));
   $("cfg").textContent=JSON.stringify(cfg,null,2);
   idField=cfg.id_field; relField=cfg.relevant_documents_field||relField;
-
-  $("kInp").value=uiDefaults.k??50;
-  $("model").value=uiDefaults.llm?.model??"gpt-4o-mini";
-  $("temp").value=uiDefaults.llm?.temperature??0;
-  $("maxTok").value=uiDefaults.llm?.max_completion_tokens??2048;
-  $("apiKey").value=uiDefaults.llm?.api_key??"";
-  $("wantJson").checked=(uiDefaults.llm?.response_format??"json_object")==="json_object";
+  $("kInp").value=ui.k??50;
 
   await loadPromptList(); await loadExtractorList();
+  if(ui.prompt_name){const o=[...$("promptSel").options].find(x=>x.value===ui.prompt_name);if(o){o.selected=true;await loadPromptText();}}
+  if(ui.extractor_name){const o=[...$("extSel").options].find(x=>x.value===ui.extractor_name);if(o)o.selected=true;}
 
-  queries=await j("/queries");
-  queries.forEach(q=>$("querySel").add(new Option(`${q.idx}: ${q.query.slice(0,60)}…`,q.idx)));
+  const llm=ui.llm||{};
+  $("apiKey").value=llm.api_key??""; $("model").value=llm.model??"gpt-4o-mini";
+  $("temp").value=llm.temperature??0; $("maxTok").value=llm.max_completion_tokens??2048;
+  $("wantJson").checked=llm.response_format?.type==="json_object";
 
-  $("querySel").onchange=()=>refreshBefore(true);
-  $("docSel").onchange=docChange;
-  $("kInp").onchange=()=>refreshBefore(false);
+  queries=await fetchJSON("/queries");
+  queries.sort((a,b)=>(a.grit_recall??Infinity)-(b.grit_recall??Infinity));
+  queries.forEach(q=>{
+    const lab=`${q.idx}: [${q.query_set}] sp=${q.specificity} qual=${q.quality} gr=${q.grit_recall} — ${q.query.slice(0,50)}…`;
+    $("querySel").add(new Option(lab,q.idx));
+  });
 
-  $("querySel").value=uiDefaults.default_query_idx??0;
-  await refreshBefore(true).then(()=>{$("docSel").value=uiDefaults.default_doc_idx??0;docChange();});
+  $("querySel").onchange=()=>refresh(true);
+  $("docSel").onchange=syncDocLabel;
+  $("kInp").onchange=()=>refresh(false);
+
+  $("querySel").value=ui.default_query_idx??0;
+  await refresh(true).then(()=>{$("docSel").value=ui.default_doc_idx??0;syncDocLabel();});
 })().catch(alert);
 
-/* ---------- list loaders ---------- */
-async function loadPromptList(){const xs=await j("/prompts");$("promptSel").innerHTML="";xs.forEach(n=>$("promptSel").add(new Option(n,n)));$("promptSel").onchange=loadPromptText;$("promptSel").selectedIndex=0;await loadPromptText();}
-async function loadPromptText(){$("promptBox").value=await fetch(`/prompt/${$("promptSel").value}`).then(r=>r.text());}
-async function loadExtractorList(){const xs=await j("/extractors");$("extSel").innerHTML="";xs.forEach(n=>$("extSel").add(new Option(n,n)));}
+/* ---------- loaders ---------- */
+async function loadPromptList(){
+  const names=await fetchJSON("/prompts");
+  $("promptSel").innerHTML=""; names.forEach(n=>$("promptSel").add(new Option(n,n)));
+  $("promptSel").onchange=loadPromptText; $("promptSel").selectedIndex=0; await loadPromptText();
+}
+async function loadPromptText(){ $("promptBox").value=await fetch(`/prompt/${$("promptSel").value}`).then(r=>r.text()); }
+async function loadExtractorList(){const xs=await fetchJSON("/extractors");$("extSel").innerHTML="";xs.forEach(n=>$("extSel").add(new Option(n,n)));}
 
-/* ---------- minor UI ---------- */
-function docChange(){ $("docTitle").textContent=$("docSel").selectedOptions[0]?.textContent||""; }
+/* ---------- UI helpers ---------- */
+function syncDocLabel(){ const o=$("docSel").selectedOptions[0]; $("docTitle").textContent=o?.textContent||""; $("docTitle").dataset.abs=o?.title||""; }
 
-/* ---------- refresh before ---------- */
-async function refreshBefore(rebuild){
+/* ---------- refresh / retrieve ---------- */
+async function refresh(rebuild){
   const qIdx=+$("querySel").value, k=+$("kInp").value;
-  $("queryText").textContent=queries[qIdx]?.query||"(loading…)";
+  const q=await fetchJSON(`/query/${qIdx}`);
+  $("queryText").textContent=q.query; $("queryText").dataset.abs=q.abstract||"";
+  $("queryMeta").textContent=`set:${q.query_set} | spec:${q.specificity} | qual:${q.quality} | gr:${q.grit_recall}`;
 
   if(rebuild){
-    const relIdsArr=(await j(`/query/${qIdx}`))[relField].map(String);
-    currentRelIds=new Set(relIdsArr);
+    currentRelIds=new Set(q[relField].map(String));
     $("docSel").innerHTML="";
-    $("afterTbl").querySelector("tbody").innerHTML="";            /* clear AFTER table */
+    document.querySelector("#afterTbl tbody").innerHTML="";
   }
 
-  const res=await j("/retrieve",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({query_idx:qIdx,k})});
-  renderTbl("beforeTbl",res.docs_before,res.hits_before);
+  const res=await fetchJSON("/retrieve",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({query_idx:qIdx,k})});
+  renderTable("beforeTbl",res.docs_before,res.hits_before);
 
-  const relIds=[...currentRelIds];
-  for(let i=0;i<relIds.length;i++){
-    const id=relIds[i], rk=res.ranks_before[id]??Infinity, rankLabel=(!Number.isFinite(rk)||rk>1e8)?"∞":rk;
-    let title=res.docs_before.find(d=>String(d[idField])===id)?.title;
-    if(!title){try{title=(await getDoc(id)).title;}catch{title="(no title)";}}
+  const rel=[...currentRelIds];
+  for(let i=0;i<rel.length;i++){
+    const id=rel[i], rk=res.ranks_before[id]??Infinity, rank=(Number.isFinite(rk)&&rk<1e8)?rk:"∞";
+    let doc=res.docs_before.find(d=>String(d[idField])===id); if(!doc){try{doc=await fetchJSON(`/doc/${id}`);}catch{}}
+    const title=doc?.title||"(no title)", abs=doc?.abstract||"(no abstract)";
     if(rebuild){
-      const opt=new Option(`${i}: rank=${rankLabel}  ${title}`,i);opt.dataset.id=id;$("docSel").add(opt);
+      const o=new Option(`${i}: rank=${rank}  ${title}`,i);o.dataset.id=id;o.title=abs;$("docSel").add(o);
     }else{
-      const opt=$("docSel").options[i];opt.textContent=`${i}: rank=${rankLabel}  ${title}`;opt.dataset.id=id;
+      const o=$("docSel").options[i];o.textContent=`${i}: rank=${rank}  ${title}`;o.dataset.id=id;o.title=abs;
     }
   }
 
-  updateRecallCard(res.recall_before);
+  setRecallCard(res.recall_before);
   $("deltaLine").textContent="";
   $("rb").textContent=JSON.stringify(res.ranks_before,null,2);
   $("ra").textContent="";
-  docChange();
+  syncDocLabel();
 }
 
 /* ---------- run prompt ---------- */
 $("runBtn").onclick=async()=>{
-  try{$("runBtn").disabled=true;
-    const payload={query_idx:+$("querySel").value,doc_idx:+$("docSel").value,prompt_name:$("promptSel").value,
-      extractor_name:$("extSel").value,k:+$("kInp").value,
+  try{
+    $("runBtn").disabled=true;
+    const payload={query_idx:+$("querySel").value,doc_idx:+$("docSel").value,
+      prompt_name:$("promptSel").value,extractor_name:$("extSel").value,k:+$("kInp").value,
       llm_cfg:{api_key:$("apiKey").value,model:$("model").value,temperature:+$("temp").value,
-      response_format:$("wantJson").checked?{type:"json_object"}:null,max_completion_tokens:+$("maxTok").value}};
-    const res=await j("/prompt/run",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    renderTbl("afterTbl",res.docs_after,res.hits_after);
+               response_format:$("wantJson").checked?{type:"json_object"}:null,max_completion_tokens:+$("maxTok").value}};
+    const res=await fetchJSON("/prompt/run",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    renderTable("afterTbl",res.docs_after,res.hits_after);
     $("ra").textContent=JSON.stringify(res.ranks_after,null,2);
-    updateRecallCard(res.recall_before,res.recall_after);
-
-    const deltaLines=Object.keys(res.recall_before).sort((a,b)=>+a-+b).map(k=>{
-      const diff=((res.recall_after[k]-res.recall_before[k])*100).toFixed(1);
-      const sign=diff>0?"+":"";
-      return `@${k}: ${sign}${diff} %`;
-    }).join("   ");
-    $("deltaLine").textContent=deltaLines;
-  }catch(e){alert(e.message);}finally{$("runBtn").disabled=false;}
+    setRecallCard(res.recall_before,res.recall_after);
+    $("deltaLine").innerHTML=Object.keys(res.recall_before).sort((a,b)=>+a-+b).map(k=>{
+      const diff=((res.recall_after[k]-res.recall_before[k])*100).toFixed(1), sign=diff>0?"+":"";
+      return `@${k}: <strong>${sign}${diff} %</strong>`;
+    }).join("   ");
+  }catch(e){alert(e);}finally{$("runBtn").disabled=false;}
 };
 
-/* ---------- table renderer ---------- */
-function renderTbl(tblId, rows, hits){
-  const tb=$(`${tblId}`).querySelector("tbody");
+/* ---------- save annotation ---------- */
+$("saveNoteBtn").onclick=async()=>{
+  const note=$("noteBox").value.trim();
+  if(!note){alert("Write a note first.");return;}
+  const clone=document.documentElement.cloneNode(true);
+  clone.querySelectorAll("script").forEach(s=>s.remove());
+  const snapshot='<!doctype html>\n'+clone.outerHTML;
+  const payload={query_idx:+$("querySel").value,doc_idx:+$("docSel").value,
+                 prompt_name:$("promptSel").value,extractor_name:$("extSel").value,k:+$("kInp").value,
+                 annotation:note,html:btoa(unescape(encodeURIComponent(snapshot)))};
+  try{
+    const resp=await fetch("/annotation/save",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
+    const js=await resp.json(); if(js.ok!==true)throw new Error("Server returned failure");
+    alert("Annotation saved."); $("noteBox").value="";
+  }catch(err){alert("Annotation failed: "+err);}
+};
+
+/* ---------- render table ---------- */
+function renderTable(id,rows,hits){
+  const tb=document.querySelector(`#${id} tbody`);
   tb.innerHTML=rows.map((d,i)=>{
-    const id=String(d.corpusid??d[idField]);
-    let start="",end="";
-    if(d.reverse_hyde){start='<em class="rev">';end='</em>';}
-    else if(currentRelIds.has(id)){start='<strong class="rel">';end='</strong>';}
-    const title=d.title||"(no title)";
     const dist=hits&&hits[i]?hits[i][1].toFixed(3):"";
-    return `<tr><td>${i+1}</td><td>${start}${title}${end}</td><td>${dist}</td></tr>`;
+    const idStr=String(d.corpusid??d[idField]);
+    let wS="",wE=""; if(d.reverse_hyde){wS='<em class="rev">';wE='</em>';} else if(currentRelIds.has(idStr)){wS='<strong class="rel">';wE='</strong>'; }
+    const abs=(d.abstract||"(no abstract)").replace(/"/g,"&quot;");
+    return `<tr class="has-abs" data-abs="${abs}"><td>${i+1}</td><td>${wS}${d.title||"(no title)"}${wE}</td><td>${dist}</td></tr>`;
   }).join("");
 }
 
 /* ---------- recall card ---------- */
-function updateRecallCard(before,after=null){
+function setRecallCard(before,after=null){
   const keys=Object.keys(before).sort((a,b)=>+a-+b);
-  const parts=keys.map(k=>{
-    return after?`@${k}: ${(before[k]*100).toFixed(1)} % → ${(after[k]*100).toFixed(1)} %`
-                :`@${k}: ${(before[k]*100).toFixed(1)} %`;
-  });
-  $("recallLine").textContent="Recall "+parts.join("   ");
+  $("recallLine").textContent="Recall "+keys.map(k=>after?`@${k}: ${(before[k]*100).toFixed(1)} % → ${(after[k]*100).toFixed(1)} %`
+                                                               :`@${k}: ${(before[k]*100).toFixed(1)} %`).join("   ");
   $("metricsCard").style.display="";
 }
 
 /* ---------- tabs ---------- */
 ["tab1","tab2"].forEach(id=>{$(id).onclick=()=>{["tab1","tab2"].forEach(x=>$(x).classList.toggle("active",x===id));
-  ["body1","body2"].forEach((b,i)=>$(b).classList.toggle("active",(id==="tab1")===!i));};});
+  ["body1","body2"].forEach((b,i)=>$(b).classList.toggle("active",(id==="tab1")!==i));};});
 
-/* ---------- CRUD ---------- */
+/* ---------- prompt CRUD ---------- */
 $("newPromptBtn").onclick=()=>{const n=prompt("New prompt name");if(n){$("promptSel").add(new Option(n,n,true,true));$("promptBox").value="";}};
-$("savePromptBtn").onclick=async()=>{await fetch(`/prompt/${$("promptSel").value}`,{method:"PUT",headers:{'Content-Type':'text/plain'},body:$("promptBox").value});alert("Saved");};
+$("savePromptBtn").onclick=()=>fetch(`/prompt/${$("promptSel").value}`,{method:"PUT",headers:{'Content-Type':'text/plain'},body:$("promptBox").value}).then(()=>alert("Saved"));
 $("reloadPromptBtn").onclick=loadPromptText;
 </script>
 </body>
 </html>
+```

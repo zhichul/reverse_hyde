@@ -1,0 +1,26 @@
+## Instructions
+Papers that are relevant to a researcher's literature search question can be hard to identify. One particular way this difficulty arises is if the researcher does not know the right special terminology to search for (e.g. they are junior). Or, perhaps the researcher does know the terminology well, but but the relevant paper was written a long time ago where terminology was different. You are an omnipotent scientist that knows the history of all scientific fields quite well, and your job is to read papers, and think of ways to rephrase the ideas and findings of a paper in today's research terminology (2024), so that they are easier to find.
+
+Concretely, you'll be given a title and abstract of the paper, and you should understand what the paper is doing, and rewrite it using today's terminology (2024). 
+
+## Paper
+Title: {title}
+
+Abstrct: {abstract}
+
+## Brainstorming
+Please try to understand what this paper does in today's terminology. It may help to think more abstractive - what high-level issue is it studying / addressing and what method is it using, and does that match closely or perfectly onto any principles or paradigms of today's research? Be thorough in rewriting in today's terms. Use the following format for your answer.
+
+"""
+Title: {{your canonicalization of the title}}
+Abstract: {{your canonicalization of the abstract}}
+"""
+
+## Response Format
+Finally, include at the end a <structured_response></structured_response> section that contains your a singleton json list with your title and abstract. Your structured response will be parsed programmatically so please make sure it's a valid json list.
+
+<structured_response>
+[
+        "Title: {{your title rewrite}}\nAbstract: {{your abstract rewrite}}",
+]
+</structured_response>

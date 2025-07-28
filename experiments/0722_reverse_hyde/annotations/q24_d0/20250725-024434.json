@@ -1,0 +1,8 @@
+{
+  "query_idx": 24,
+  "doc_idx": 0,
+  "prompt_name": "title_abstract",
+  "extractor_name": "json_list_extractor",
+  "k": 20,
+  "annotation": "Abstract doesn't mention \"prompt tuning\" specifically, while the other ones often do."
+}
